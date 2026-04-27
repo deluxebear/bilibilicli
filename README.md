@@ -1,48 +1,245 @@
 # bilibilicli
 
-Browser-assisted local CLI for Bilibili video submission.
+`bilibilicli` 是一个本地 CLI，用来把哔哩哔哩创作中心的视频投稿流程命令行化。它复用你本机浏览器登录后的 Cookie，并通过已研究出的投稿接口完成视频上传、封面上传、草稿保存、删除草稿、参数查询和正式投稿等操作。
 
-This project keeps login in a real browser, stores cookies under `~/.bilibilicli`, and replays the upload/submission API from the CLI. Do not commit files from `~/.bilibilicli`; they contain private account material.
+这个项目不是哔哩哔哩官方工具。接口来自已授权登录状态下的浏览器流量分析，后续如果创作中心页面或接口变更，可能需要重新捕获并更新实现。
 
-## Install
+## 安装
 
-Published package:
+直接用 `npx` 运行：
 
 ```bash
 npx @deluxebear/bilibilicli --help
+```
+
+全局安装后使用 `bilibilicli` 命令：
+
+```bash
 npm install -g @deluxebear/bilibilicli
 bilibilicli --help
 ```
 
-Local package before publishing:
+本地开发：
 
 ```bash
 npm install
 npm link
+bilibilicli --help
 ```
 
-Or install the packed tarball globally:
+从本地 tarball 安装：
 
 ```bash
 npm pack
 npm install -g ./deluxebear-bilibilicli-0.1.0.tgz
-bilibilicli --help
 ```
 
-To publish to npm:
+## 登录与本地凭据
+
+先打开真实浏览器完成登录：
 
 ```bash
-npm login
-npm publish --access public
+bilibilicli auth login --profile default
 ```
 
-`npx @deluxebear/bilibilicli ...` works after the package is published. `npm install -g @deluxebear/bilibilicli` installs the global `bilibilicli` command permanently.
+检查登录状态：
 
-## Release
+```bash
+bilibilicli auth status --profile default
+bilibilicli auth doctor --profile default
+```
 
-This repository publishes `@deluxebear/bilibilicli` to npm from GitHub Actions.
+默认数据目录：
 
-Before the first automated publish, configure npm trusted publishing for:
+- 浏览器用户目录：`~/.bilibilicli/browser-profiles/default/`
+- Cookie 文件：`~/.bilibilicli/profiles/default/auth.json`
+- 抓包摘要：`~/.bilibilicli/profiles/default/capture-summary.json`
+
+`~/.bilibilicli` 内包含你的登录态，请不要提交到 Git，也不要分享给他人。
+
+## 投稿参数查询
+
+投稿表单里常用的三个参数分别是：
+
+- `copyright`：类型，`1` 表示自制，`2` 表示转载。
+- `tid`：分区 ID，例如情感分区在当前接口中为 `27`。
+- `topic_id` / `topic_detail` / `mission_id`：话题、活动、任务相关参数。
+
+查询类型：
+
+```bash
+bilibilicli params copyright
+```
+
+查询分区：
+
+```bash
+bilibilicli params types
+bilibilicli params types --compact
+```
+
+按关键词或标题查询话题：
+
+```bash
+bilibilicli params topics --keyword "上B站看播客"
+bilibilicli params topics --tid 27 --title "099 What Earth in 2125 could look like"
+```
+
+查询单个话题详情：
+
+```bash
+bilibilicli params topic-info --topic-id 1260884
+```
+
+## 捕获投稿流程
+
+当哔哩哔哩页面改版、参数缺失，或需要重新研究接口时，可以打开投稿页并记录接口摘要：
+
+```bash
+bilibilicli auth capture \
+  --profile default \
+  --url https://member.bilibili.com/platform/upload/video/frame
+```
+
+完成一遍浏览器操作后，CLI 会把请求摘要保存到：
+
+```text
+~/.bilibilicli/profiles/default/capture-summary.json
+```
+
+## 常用命令
+
+查看已实现命令和配置：
+
+```bash
+bilibilicli commands list
+bilibilicli config list
+bilibilicli doctor --profile default
+```
+
+上传视频文件，返回后续投稿需要的 `filename`、`biz_id` 等字段：
+
+```bash
+bilibilicli upload file \
+  --profile default \
+  --file ./video.mp4
+```
+
+上传封面：
+
+```bash
+bilibilicli cover upload \
+  --profile default \
+  --file ./cover.jpg
+```
+
+保存字幕：
+
+```bash
+bilibilicli subtitle save \
+  --profile default \
+  --cid 123456789 \
+  --file ./subtitle.srt \
+  --lan en-US
+```
+
+低层接口保存草稿：
+
+```bash
+bilibilicli draft save \
+  --profile default \
+  --payload ./draft-payload.json
+```
+
+删除草稿：
+
+```bash
+bilibilicli draft delete \
+  --profile default \
+  --id 3399934
+```
+
+正式投稿：
+
+```bash
+bilibilicli archive submit \
+  --profile default \
+  --payload ./archive-payload.json
+```
+
+从视频、封面和字幕文件直接生成草稿：
+
+```bash
+bilibilicli video draft \
+  --profile default \
+  --video ./video.mp4 \
+  --cover ./cover.jpg \
+  --subtitle ./subtitle.srt \
+  --subtitle-lan en-US \
+  --title "099 What Earth in 2125 could look like" \
+  --desc "TED-Ed video with subtitles" \
+  --tid 27 \
+  --tag "英语,英语学习,短片"
+```
+
+从文件直接执行正式投稿：
+
+```bash
+bilibilicli video run \
+  --profile default \
+  --video ./video.mp4 \
+  --cover ./cover.jpg \
+  --subtitle ./subtitle.srt \
+  --subtitle-lan en-US \
+  --title "099 What Earth in 2125 could look like" \
+  --desc "TED-Ed video with subtitles" \
+  --tid 27 \
+  --tag "英语,英语学习,短片" \
+  --topic-id 1260884 \
+  --mission-id 12345
+```
+
+## 字幕说明
+
+哔哩哔哩的草稿接口可以接受字幕相关的 `preSave` 参数，但创作中心草稿编辑器不一定会稳定回显已保存的字幕文件。对字幕强依赖的流程，优先使用 `video run` 走正式投稿接口，而不是只保存草稿后再从网页继续编辑。
+
+## 会产生远端状态的命令
+
+下面这些命令会修改哔哩哔哩账号下的远端状态：
+
+- `upload file`
+- `cover upload`
+- `subtitle save`
+- `draft save`
+- `draft delete`
+- `archive submit`
+- `video draft`
+- `video run`
+
+在自动化批量投稿前，建议先用小文件或测试草稿验证一遍参数。
+
+## 已知接口
+
+当前实现主要覆盖这些接口：
+
+- 登录态检查：`https://api.bilibili.com/x/web-interface/nav`
+- 上传初始化：`https://member.bilibili.com/preupload`
+- 视频分片上传：上传服务返回的 `upos_uri`
+- 上传完成：上传服务返回的 `complete` 地址
+- 封面上传：`https://member.bilibili.com/x/vu/web/cover/up`
+- 字幕图片上传：`https://member.bilibili.com/x/vu/web/image/subtitle`
+- 字幕预保存：`https://member.bilibili.com/x/vu/web/add/v3/pre`
+- 草稿保存：`https://member.bilibili.com/x/vupre/web/draft/add`
+- 草稿更新：`https://member.bilibili.com/x/vupre/web/draft/edit`
+- 草稿删除：`https://member.bilibili.com/x/vupre/web/draft/delete`
+- 正式投稿：`https://member.bilibili.com/x/vu/web/add/v3`
+- 投稿预检和参数：创作中心 `archive/pre`、分区、话题、活动相关接口
+
+## 发布到 npm
+
+包名是 `@deluxebear/bilibilicli`，命令名是 `bilibilicli`。
+
+本仓库通过 GitHub Actions 发布 npm 包。npm 侧需要开启 Trusted Publishing，配置如下：
 
 ```text
 Package: @deluxebear/bilibilicli
@@ -50,169 +247,39 @@ Publisher: GitHub Actions
 Owner: deluxebear
 Repository: bilibilicli
 Workflow: publish.yml
-Environment: leave empty
+Environment: 留空
 ```
 
-Then publish by creating a GitHub Release for a tag that matches `package.json`:
+发布新版本：
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
-gh release create v0.1.0 --title "v0.1.0" --notes "Initial release"
+npm version patch
+git push
+git push origin --tags
+gh release create v0.1.1 --title "v0.1.1" --notes "Release v0.1.1"
 ```
 
-The release workflow runs `npm ci`, `npm run check`, `npm run pack:dry`, then `npm publish --access public`.
-
-## Login
+`publish.yml` 会执行：
 
 ```bash
-bilibilicli auth login --profile default
-bilibilicli auth status --profile default
-bilibilicli doctor --profile default
+npm ci
+npm run check
+npm run pack:dry
+npm publish --access public
 ```
 
-`auth login` opens Bilibili's member upload page with a persistent browser profile at:
+工作流还会检查 Git tag 是否和 `package.json` 版本一致；如果 npm 上已经存在同版本，会自动跳过发布。
 
-```text
-~/.bilibilicli/browser-profiles/default/
-```
-
-After logging in, press Enter in the terminal. Cookies are saved to:
-
-```text
-~/.bilibilicli/profiles/default/auth.json
-```
-
-## Capture Requests
-
-Use this when Bilibili changes fields or when you need to compare the CLI with the website:
+## 开发检查
 
 ```bash
-bilibilicli auth capture --profile default --url https://member.bilibili.com/platform/upload/video/frame
+npm run check
+npm run pack:dry
 ```
 
-Perform the website workflow in the opened browser, then press Enter. A redacted request summary is saved to:
+如果哔哩哔哩接口发生变化，优先重新执行 `auth capture`，再对比和更新这些文件：
 
-```text
-~/.bilibilicli/profiles/default/capture-summary.json
-```
-
-## Commands
-
-Read-only:
-
-```bash
-bilibilicli commands list
-bilibilicli config list
-bilibilicli auth status --profile default
-bilibilicli doctor --profile default
-```
-
-Upload a file but do not submit an archive:
-
-```bash
-bilibilicli upload file --profile default --file ./video.mp4
-```
-
-Upload a cover image:
-
-```bash
-bilibilicli cover upload --profile default --file ./cover.jpg
-```
-
-Upload and attach a subtitle draft to an uploaded video `cid`:
-
-```bash
-bilibilicli subtitle save \
-  --profile default \
-  --cid "<cid returned by upload file>" \
-  --file ./subtitle.en.srt \
-  --lan en
-```
-
-Save an uploaded file as a draft:
-
-```bash
-bilibilicli draft save \
-  --profile default \
-  --filename "<filename returned by upload file>" \
-  --cid "<cid returned by upload file>" \
-  --title "投稿标题" \
-  --tid 27 \
-  --tags "学习" \
-  --subtitle-lan en \
-  --description "简介"
-```
-
-Delete a draft by draft id:
-
-```bash
-bilibilicli draft delete --profile default --id 3399934
-```
-
-Mark an existing draft as having subtitles:
-
-```bash
-bilibilicli draft subtitle --profile default --id 3399965 --lan en
-```
-
-Submit an uploaded file:
-
-```bash
-bilibilicli archive submit \
-  --profile default \
-  --filename "<filename returned by upload file>" \
-  --title "投稿标题" \
-  --tid 17 \
-  --tags "标签1,标签2" \
-  --description "简介"
-```
-
-Upload and submit in one command:
-
-```bash
-bilibilicli video draft \
-  --profile default \
-  --file ./video.mp4 \
-  --cover-file ./cover.jpg \
-  --subtitle-file ./subtitle.en.srt \
-  --subtitle-lan en \
-  --title "投稿标题" \
-  --tid 27 \
-  --tags "学习" \
-  --description "简介"
-```
-
-The currently verified website path is "upload and save draft". Direct archive submission is kept as a low-level command and may need another capture of the final submit button before use.
-
-Upload and submit in one command:
-
-```bash
-bilibilicli video run \
-  --profile default \
-  --file ./video.mp4 \
-  --title "投稿标题" \
-  --tid 17 \
-  --tags "标签1,标签2" \
-  --description "简介"
-```
-
-`upload file`, `draft save`, `video draft`, `archive submit`, and `video run` are state-changing commands. They upload media, save drafts, and/or create a Bilibili submission.
-
-## Known Protocol
-
-The first implementation uses these web endpoints:
-
-- `GET https://api.bilibili.com/x/web-interface/nav` for read-only account diagnostics.
-- `POST https://member.bilibili.com/upload/multipart/new` for current video upload initialization.
-- `POST https://member.bilibili.com/upload/multipart/part`, signed `PUT`, and `POST https://member.bilibili.com/upload/multipart/complete` for current video bytes.
-- `POST https://member.bilibili.com/x/vu/web/cover/up` for optional cover upload.
-- `POST https://api.bilibili.com/x/upload/web/image` with `bucket=subtitle` for subtitle file upload.
-- `POST https://api.bilibili.com/x/v2/dm/subtitle/draft/preSave` for attaching subtitle drafts.
-- `POST https://member.bilibili.com/x/vupre/web/draft/add` for saving an upload as a draft.
-- `POST https://member.bilibili.com/x/vupre/web/draft/update` for marking a saved draft subtitle language.
-- `POST https://member.bilibili.com/x/vupre/web/draft/delete` for deleting a draft by id.
-- Legacy `GET https://member.bilibili.com/preupload` and Upos multipart helpers are retained in code for older upload paths.
-- `POST https://member.bilibili.com/x/vu/web/add/v3` for archive submission.
-
-Bilibili can change required fields, CDN choices, or anti-abuse checks. If a command fails, run `auth capture`, perform the same action on the website, and compare the redacted capture with the CLI request shape.
+- `lib/archive.mjs`
+- `lib/upload.mjs`
+- `lib/subtitle.mjs`
+- `lib/params.mjs`
