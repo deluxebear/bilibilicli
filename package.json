@@ -3,11 +3,26 @@
   "version": "0.1.0",
   "description": "Local CLI for browser-assisted Bilibili video uploads.",
   "type": "module",
+  "keywords": [
+    "bilibili",
+    "cli",
+    "upload",
+    "video",
+    "automation"
+  ],
   "bin": {
     "bilibilicli": "./bin/bilibilicli.mjs"
   },
+  "files": [
+    "bin/",
+    "lib/",
+    "scripts/build-binary.mjs",
+    "README.md"
+  ],
   "scripts": {
     "check": "node --check bin/bilibilicli.mjs && node --check lib/*.mjs",
+    "prepack": "npm run check",
+    "pack:dry": "npm pack --dry-run",
     "build:binary": "node scripts/build-binary.mjs"
   },
   "dependencies": {

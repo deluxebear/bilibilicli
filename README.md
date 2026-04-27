@@ -6,10 +6,37 @@ This project keeps login in a real browser, stores cookies under `~/.bilibilicli
 
 ## Install
 
+Published package:
+
+```bash
+npx bilibilicli --help
+npm install -g bilibilicli
+bilibilicli --help
+```
+
+Local package before publishing:
+
 ```bash
 npm install
 npm link
 ```
+
+Or install the packed tarball globally:
+
+```bash
+npm pack
+npm install -g ./bilibilicli-0.1.0.tgz
+bilibilicli --help
+```
+
+To publish to npm:
+
+```bash
+npm login
+npm publish --access public
+```
+
+`npx bilibilicli ...` works after the package is published. `npm install -g bilibilicli` installs the global `bilibilicli` command permanently.
 
 ## Login
 
