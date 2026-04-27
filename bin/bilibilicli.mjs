@@ -97,7 +97,8 @@ async function main() {
       source: args.source || "",
       filename: requireFlag(args, "filename"),
       videoTitle: args["video-title"] || args.title,
-      cover: args.cover || ""
+      cover: args.cover || "",
+      subtitleLan: args["subtitle-lan"] || ""
     }), args);
   }
 
@@ -130,7 +131,29 @@ async function main() {
 
   if (group === "video" && action === "run") {
     const file = requireFlag(args, "file");
+    let cover = args.cover || "";
+    if (args["cover-file"]) {
+      const uploadedCover = await uploadCover(client, { file: args["cover-file"] });
+      const coverData = uploadedCover.parsed?.data || uploadedCover.parsed || {};
+      cover = coverData.url || coverData.cover || cover;
+      if (!cover) return printJson({ ok: false, stage: "cover", cover: uploadedCover }, args);
+    }
     const uploaded = await uploadVideoFile(client, { file });
+    if (!uploaded.ok) return printJson({ ok: false, uploaded }, args);
+    const uploadedData = uploaded.parsed || {};
+    if (!uploadedData.filename || !(uploadedData.cid || uploadedData.bizId)) {
+      return printJson({ ok: false, error: "Upload response did not include filename and cid/bizId", uploaded }, args);
+    }
+    let subtitle = null;
+    const subtitleLan = args["subtitle-file"] ? (args["subtitle-lan"] || inferSubtitleLan(args["subtitle-file"])) : "";
+    if (args["subtitle-file"]) {
+      subtitle = await saveSubtitleDraft(client, {
+        cid: uploadedData.cid || uploadedData.bizId,
+        file: args["subtitle-file"],
+        lan: subtitleLan
+      });
+      if (!subtitle.ok) return printJson({ ok: false, uploaded, subtitle }, args);
+    }
     const submitted = await submitArchive(client, {
       title: requireFlag(args, "title"),
       description: args.description || "",
@@ -138,11 +161,12 @@ async function main() {
       tags: splitCsv(requireFlag(args, "tags")),
       copyright: Number(args.copyright || 1),
       source: args.source || "",
-      filename: uploaded.parsed.filename,
+      filename: uploadedData.filename,
       videoTitle: args["video-title"] || args.title,
-      cover: args.cover || ""
+      cover,
+      subtitleLan
     });
-    return printJson({ ok: uploaded.ok && submitted.ok, uploaded, submitted }, args);
+    return printJson({ ok: uploaded.ok && (!subtitle || subtitle.ok) && submitted.ok, uploaded, subtitle, submitted }, args);
   }
 
   if (group === "video" && action === "draft") {
@@ -183,7 +207,13 @@ async function main() {
       cover43,
       subtitleLan: args["subtitle-file"] ? (args["subtitle-lan"] || inferSubtitleLan(args["subtitle-file"])) : ""
     });
-    return printJson({ ok: uploaded.ok && (!subtitle || subtitle.ok) && drafted.ok, uploaded, subtitle, drafted }, args);
+    return printJson({
+      ok: uploaded.ok && (!subtitle || subtitle.ok) && drafted.ok,
+      uploaded,
+      subtitle,
+      drafted,
+      ...(subtitle ? { note: "Bilibili's draft endpoint accepts subtitle preSave but the draft editor does not reload persisted subtitle files; publish flow uses pre_subtitle on submit." } : {})
+    }, args);
   }
 
   throw new Error(`Unknown command: ${[group, action].filter(Boolean).join(" ")}`);
