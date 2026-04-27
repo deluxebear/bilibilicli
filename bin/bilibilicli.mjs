@@ -3,7 +3,7 @@ import { login, capture, authStatus } from "../lib/auth.mjs";
 import { getConfig, listConfig, setConfig } from "../lib/config.mjs";
 import { createClient } from "../lib/client.mjs";
 import { preuploadVideo, uploadVideoFile } from "../lib/upload.mjs";
-import { deleteDraft, saveDraft, submitArchive, uploadCover } from "../lib/archive.mjs";
+import { deleteDraft, saveDraft, submitArchive, updateDraftSubtitle, uploadCover } from "../lib/archive.mjs";
 import { inferSubtitleLan, saveSubtitleDraft } from "../lib/subtitle.mjs";
 import { commandRegistry, parseArgs, printJson, usage } from "../lib/cli.mjs";
 
@@ -112,12 +112,20 @@ async function main() {
       cid: requireFlag(args, "cid"),
       videoTitle: args["video-title"] || args.title,
       cover: args.cover || "",
-      cover43: args.cover43 || ""
+      cover43: args.cover43 || "",
+      subtitleLan: args["subtitle-lan"] || ""
     }), args);
   }
 
   if (group === "draft" && action === "delete") {
     return printJson(await deleteDraft(client, { id: requireFlag(args, "id") }), args);
+  }
+
+  if (group === "draft" && action === "subtitle") {
+    return printJson(await updateDraftSubtitle(client, {
+      id: requireFlag(args, "id"),
+      lan: args.lan || "en"
+    }), args);
   }
 
   if (group === "video" && action === "run") {
@@ -172,7 +180,8 @@ async function main() {
       cid: uploadedData.cid || uploadedData.bizId,
       videoTitle: args["video-title"] || args.title,
       cover,
-      cover43
+      cover43,
+      subtitleLan: args["subtitle-file"] ? (args["subtitle-lan"] || inferSubtitleLan(args["subtitle-file"])) : ""
     });
     return printJson({ ok: uploaded.ok && (!subtitle || subtitle.ok) && drafted.ok, uploaded, subtitle, drafted }, args);
   }
