@@ -34,6 +34,18 @@ npm pack
 npm install -g ./deluxebear-bilibilicli-0.1.0.tgz
 ```
 
+安装配套的 Agent Skill：
+
+```bash
+npx skills add deluxebear/bilibilicli --skill bilibilicli
+```
+
+全局安装到 Agent：
+
+```bash
+npx skills add deluxebear/bilibilicli --skill bilibilicli -g -y
+```
+
 ## 登录与本地凭据
 
 先打开真实浏览器完成登录：
@@ -46,7 +58,7 @@ bilibilicli auth login --profile default
 
 ```bash
 bilibilicli auth status --profile default
-bilibilicli auth doctor --profile default
+bilibilicli doctor --profile default
 ```
 
 默认数据目录：
@@ -148,7 +160,12 @@ bilibilicli subtitle save \
 ```bash
 bilibilicli draft save \
   --profile default \
-  --payload ./draft-payload.json
+  --filename "<uploaded-filename>" \
+  --cid "<cid>" \
+  --title "投稿标题" \
+  --tid 27 \
+  --tags "英语,英语学习,短片" \
+  --description "简介"
 ```
 
 删除草稿：
@@ -164,7 +181,11 @@ bilibilicli draft delete \
 ```bash
 bilibilicli archive submit \
   --profile default \
-  --payload ./archive-payload.json
+  --filename "<uploaded-filename>" \
+  --title "投稿标题" \
+  --tid 27 \
+  --tags "英语,英语学习,短片" \
+  --description "简介"
 ```
 
 从视频、封面和字幕文件直接生成草稿：
@@ -172,14 +193,14 @@ bilibilicli archive submit \
 ```bash
 bilibilicli video draft \
   --profile default \
-  --video ./video.mp4 \
-  --cover ./cover.jpg \
-  --subtitle ./subtitle.srt \
+  --file ./video.mp4 \
+  --cover-file ./cover.jpg \
+  --subtitle-file ./subtitle.srt \
   --subtitle-lan en-US \
   --title "099 What Earth in 2125 could look like" \
-  --desc "TED-Ed video with subtitles" \
+  --description "TED-Ed video with subtitles" \
   --tid 27 \
-  --tag "英语,英语学习,短片"
+  --tags "英语,英语学习,短片"
 ```
 
 从文件直接执行正式投稿：
@@ -187,14 +208,14 @@ bilibilicli video draft \
 ```bash
 bilibilicli video run \
   --profile default \
-  --video ./video.mp4 \
-  --cover ./cover.jpg \
-  --subtitle ./subtitle.srt \
+  --file ./video.mp4 \
+  --cover-file ./cover.jpg \
+  --subtitle-file ./subtitle.srt \
   --subtitle-lan en-US \
   --title "099 What Earth in 2125 could look like" \
-  --desc "TED-Ed video with subtitles" \
+  --description "TED-Ed video with subtitles" \
   --tid 27 \
-  --tag "英语,英语学习,短片" \
+  --tags "英语,英语学习,短片" \
   --topic-id 1260884 \
   --mission-id 12345
 ```

@@ -1,0 +1,7 @@
+interface:
+  display_name: "bilibilicli"
+  short_description: "用 CLI 操作哔哩哔哩投稿流程"
+  default_prompt: "Use $bilibilicli to log in, inspect parameters, upload media, save drafts, or submit Bilibili creator videos."
+
+policy:
+  allow_implicit_invocation: true
