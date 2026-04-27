@@ -3,7 +3,7 @@ import { login, capture, authStatus } from "../lib/auth.mjs";
 import { getConfig, listConfig, setConfig } from "../lib/config.mjs";
 import { createClient } from "../lib/client.mjs";
 import { preuploadVideo, uploadVideoFile } from "../lib/upload.mjs";
-import { submitArchive } from "../lib/archive.mjs";
+import { saveDraft, submitArchive, uploadCover } from "../lib/archive.mjs";
 import { commandRegistry, parseArgs, printJson, usage } from "../lib/cli.mjs";
 
 async function main() {
@@ -73,6 +73,10 @@ async function main() {
     }
   }
 
+  if (group === "cover" && action === "upload") {
+    return printJson(await uploadCover(client, { file: requireFlag(args, "file") }), args);
+  }
+
   if (group === "archive" && action === "submit") {
     return printJson(await submitArchive(client, {
       title: requireFlag(args, "title"),
@@ -84,6 +88,21 @@ async function main() {
       filename: requireFlag(args, "filename"),
       videoTitle: args["video-title"] || args.title,
       cover: args.cover || ""
+    }), args);
+  }
+
+  if (group === "draft" && action === "save") {
+    return printJson(await saveDraft(client, {
+      title: requireFlag(args, "title"),
+      description: args.description || "",
+      tid: Number(requireFlag(args, "tid")),
+      tags: splitCsv(requireFlag(args, "tags")),
+      copyright: Number(args.copyright || 1),
+      filename: requireFlag(args, "filename"),
+      cid: requireFlag(args, "cid"),
+      videoTitle: args["video-title"] || args.title,
+      cover: args.cover || "",
+      cover43: args.cover43 || ""
     }), args);
   }
 
@@ -102,6 +121,37 @@ async function main() {
       cover: args.cover || ""
     });
     return printJson({ ok: uploaded.ok && submitted.ok, uploaded, submitted }, args);
+  }
+
+  if (group === "video" && action === "draft") {
+    const file = requireFlag(args, "file");
+    let cover = args.cover || "";
+    let cover43 = args.cover43 || "";
+    if (args["cover-file"]) {
+      const uploadedCover = await uploadCover(client, { file: args["cover-file"] });
+      const coverData = uploadedCover.parsed?.data || uploadedCover.parsed || {};
+      cover = coverData.url || coverData.cover || cover;
+      cover43 = coverData.url43 || coverData.cover43 || cover43 || cover;
+    }
+    const uploaded = await uploadVideoFile(client, { file });
+    if (!uploaded.ok) return printJson({ ok: false, uploaded }, args);
+    const uploadedData = uploaded.parsed || {};
+    if (!uploadedData.filename || !(uploadedData.cid || uploadedData.bizId)) {
+      return printJson({ ok: false, error: "Upload response did not include filename and cid/bizId", uploaded }, args);
+    }
+    const drafted = await saveDraft(client, {
+      title: requireFlag(args, "title"),
+      description: args.description || "",
+      tid: Number(requireFlag(args, "tid")),
+      tags: splitCsv(requireFlag(args, "tags")),
+      copyright: Number(args.copyright || 1),
+      filename: uploadedData.filename,
+      cid: uploadedData.cid || uploadedData.bizId,
+      videoTitle: args["video-title"] || args.title,
+      cover,
+      cover43
+    });
+    return printJson({ ok: uploaded.ok && drafted.ok, uploaded, drafted }, args);
   }
 
   throw new Error(`Unknown command: ${[group, action].filter(Boolean).join(" ")}`);

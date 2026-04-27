@@ -62,6 +62,25 @@ Upload a file but do not submit an archive:
 bilibilicli upload file --profile default --file ./video.mp4
 ```
 
+Upload a cover image:
+
+```bash
+bilibilicli cover upload --profile default --file ./cover.jpg
+```
+
+Save an uploaded file as a draft:
+
+```bash
+bilibilicli draft save \
+  --profile default \
+  --filename "<filename returned by upload file>" \
+  --cid "<cid returned by upload file>" \
+  --title "投稿标题" \
+  --tid 27 \
+  --tags "学习" \
+  --description "简介"
+```
+
 Submit an uploaded file:
 
 ```bash
@@ -77,6 +96,21 @@ bilibilicli archive submit \
 Upload and submit in one command:
 
 ```bash
+bilibilicli video draft \
+  --profile default \
+  --file ./video.mp4 \
+  --cover-file ./cover.jpg \
+  --title "投稿标题" \
+  --tid 27 \
+  --tags "学习" \
+  --description "简介"
+```
+
+The currently verified website path is "upload and save draft". Direct archive submission is kept as a low-level command and may need another capture of the final submit button before use.
+
+Upload and submit in one command:
+
+```bash
 bilibilicli video run \
   --profile default \
   --file ./video.mp4 \
@@ -86,15 +120,18 @@ bilibilicli video run \
   --description "简介"
 ```
 
-`upload file`, `archive submit`, and `video run` are state-changing commands. They upload media and/or create a Bilibili submission.
+`upload file`, `draft save`, `video draft`, `archive submit`, and `video run` are state-changing commands. They upload media, save drafts, and/or create a Bilibili submission.
 
 ## Known Protocol
 
 The first implementation uses these web endpoints:
 
 - `GET https://api.bilibili.com/x/web-interface/nav` for read-only account diagnostics.
-- `GET https://member.bilibili.com/preupload` for upload initialization.
-- Upos multipart `POST ?uploads`, `PUT ?partNumber=...`, and `POST ?uploadId=...` for video bytes.
+- `POST https://member.bilibili.com/upload/multipart/new` for current video upload initialization.
+- `POST https://member.bilibili.com/upload/multipart/part`, signed `PUT`, and `POST https://member.bilibili.com/upload/multipart/complete` for current video bytes.
+- `POST https://member.bilibili.com/x/vu/web/cover/up` for optional cover upload.
+- `POST https://member.bilibili.com/x/vupre/web/draft/add` for saving an upload as a draft.
+- Legacy `GET https://member.bilibili.com/preupload` and Upos multipart helpers are retained in code for older upload paths.
 - `POST https://member.bilibili.com/x/vu/web/add/v3` for archive submission.
 
 Bilibili can change required fields, CDN choices, or anti-abuse checks. If a command fails, run `auth capture`, perform the same action on the website, and compare the redacted capture with the CLI request shape.
