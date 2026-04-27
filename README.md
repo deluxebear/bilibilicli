@@ -91,6 +91,12 @@ bilibilicli draft save \
   --description "简介"
 ```
 
+Delete a draft by draft id:
+
+```bash
+bilibilicli draft delete --profile default --id 3399934
+```
+
 Submit an uploaded file:
 
 ```bash
@@ -145,6 +151,7 @@ The first implementation uses these web endpoints:
 - `POST https://api.bilibili.com/x/upload/web/image` with `bucket=subtitle` for subtitle file upload.
 - `POST https://api.bilibili.com/x/v2/dm/subtitle/draft/preSave` for attaching subtitle drafts.
 - `POST https://member.bilibili.com/x/vupre/web/draft/add` for saving an upload as a draft.
+- `POST https://member.bilibili.com/x/vupre/web/draft/delete` for deleting a draft by id.
 - Legacy `GET https://member.bilibili.com/preupload` and Upos multipart helpers are retained in code for older upload paths.
 - `POST https://member.bilibili.com/x/vu/web/add/v3` for archive submission.
 

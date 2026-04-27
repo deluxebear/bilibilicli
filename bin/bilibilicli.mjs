@@ -3,7 +3,7 @@ import { login, capture, authStatus } from "../lib/auth.mjs";
 import { getConfig, listConfig, setConfig } from "../lib/config.mjs";
 import { createClient } from "../lib/client.mjs";
 import { preuploadVideo, uploadVideoFile } from "../lib/upload.mjs";
-import { saveDraft, submitArchive, uploadCover } from "../lib/archive.mjs";
+import { deleteDraft, saveDraft, submitArchive, uploadCover } from "../lib/archive.mjs";
 import { inferSubtitleLan, saveSubtitleDraft } from "../lib/subtitle.mjs";
 import { commandRegistry, parseArgs, printJson, usage } from "../lib/cli.mjs";
 
@@ -114,6 +114,10 @@ async function main() {
       cover: args.cover || "",
       cover43: args.cover43 || ""
     }), args);
+  }
+
+  if (group === "draft" && action === "delete") {
+    return printJson(await deleteDraft(client, { id: requireFlag(args, "id") }), args);
   }
 
   if (group === "video" && action === "run") {
