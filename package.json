@@ -1,5 +1,5 @@
 {
-  "name": "bilibilicli",
+  "name": "@deluxebear/bilibilicli",
   "version": "0.1.0",
   "description": "Local CLI for browser-assisted Bilibili video uploads.",
   "type": "module",
