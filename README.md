@@ -38,6 +38,31 @@ npm publish --access public
 
 `npx @deluxebear/bilibilicli ...` works after the package is published. `npm install -g @deluxebear/bilibilicli` installs the global `bilibilicli` command permanently.
 
+## Release
+
+This repository publishes `@deluxebear/bilibilicli` to npm from GitHub Actions.
+
+Before the first automated publish, configure npm trusted publishing for:
+
+```text
+Package: @deluxebear/bilibilicli
+Publisher: GitHub Actions
+Owner: deluxebear
+Repository: bilibilicli
+Workflow: publish.yml
+Environment: leave empty
+```
+
+Then publish by creating a GitHub Release for a tag that matches `package.json`:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+gh release create v0.1.0 --title "v0.1.0" --notes "Initial release"
+```
+
+The release workflow runs `npm ci`, `npm run check`, `npm run pack:dry`, then `npm publish --access public`.
+
 ## Login
 
 ```bash

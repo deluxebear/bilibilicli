@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "Local CLI for browser-assisted Bilibili video uploads.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deluxebear/bilibilicli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/deluxebear/bilibilicli/issues"
+  },
+  "homepage": "https://github.com/deluxebear/bilibilicli#readme",
   "keywords": [
     "bilibili",
     "cli",
@@ -16,14 +24,12 @@
   "files": [
     "bin/",
     "lib/",
-    "scripts/build-binary.mjs",
     "README.md"
   ],
   "scripts": {
     "check": "node --check bin/bilibilicli.mjs && node --check lib/*.mjs",
     "prepack": "npm run check",
-    "pack:dry": "npm pack --dry-run",
-    "build:binary": "node scripts/build-binary.mjs"
+    "pack:dry": "npm pack --dry-run"
   },
   "dependencies": {
     "playwright": "^1.59.1"
