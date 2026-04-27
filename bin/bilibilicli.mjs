@@ -4,6 +4,7 @@ import { getConfig, listConfig, setConfig } from "../lib/config.mjs";
 import { createClient } from "../lib/client.mjs";
 import { preuploadVideo, uploadVideoFile } from "../lib/upload.mjs";
 import { saveDraft, submitArchive, uploadCover } from "../lib/archive.mjs";
+import { inferSubtitleLan, saveSubtitleDraft } from "../lib/subtitle.mjs";
 import { commandRegistry, parseArgs, printJson, usage } from "../lib/cli.mjs";
 
 async function main() {
@@ -77,6 +78,15 @@ async function main() {
     return printJson(await uploadCover(client, { file: requireFlag(args, "file") }), args);
   }
 
+  if (group === "subtitle" && action === "save") {
+    const file = requireFlag(args, "file");
+    return printJson(await saveSubtitleDraft(client, {
+      cid: requireFlag(args, "cid"),
+      file,
+      lan: args.lan || inferSubtitleLan(file)
+    }), args);
+  }
+
   if (group === "archive" && action === "submit") {
     return printJson(await submitArchive(client, {
       title: requireFlag(args, "title"),
@@ -139,6 +149,15 @@ async function main() {
     if (!uploadedData.filename || !(uploadedData.cid || uploadedData.bizId)) {
       return printJson({ ok: false, error: "Upload response did not include filename and cid/bizId", uploaded }, args);
     }
+    let subtitle = null;
+    if (args["subtitle-file"]) {
+      subtitle = await saveSubtitleDraft(client, {
+        cid: uploadedData.cid || uploadedData.bizId,
+        file: args["subtitle-file"],
+        lan: args["subtitle-lan"] || inferSubtitleLan(args["subtitle-file"])
+      });
+      if (!subtitle.ok) return printJson({ ok: false, uploaded, subtitle }, args);
+    }
     const drafted = await saveDraft(client, {
       title: requireFlag(args, "title"),
       description: args.description || "",
@@ -151,7 +170,7 @@ async function main() {
       cover,
       cover43
     });
-    return printJson({ ok: uploaded.ok && drafted.ok, uploaded, drafted }, args);
+    return printJson({ ok: uploaded.ok && (!subtitle || subtitle.ok) && drafted.ok, uploaded, subtitle, drafted }, args);
   }
 
   throw new Error(`Unknown command: ${[group, action].filter(Boolean).join(" ")}`);

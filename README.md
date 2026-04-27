@@ -68,6 +68,16 @@ Upload a cover image:
 bilibilicli cover upload --profile default --file ./cover.jpg
 ```
 
+Upload and attach a subtitle draft to an uploaded video `cid`:
+
+```bash
+bilibilicli subtitle save \
+  --profile default \
+  --cid "<cid returned by upload file>" \
+  --file ./subtitle.en.srt \
+  --lan en
+```
+
 Save an uploaded file as a draft:
 
 ```bash
@@ -100,6 +110,8 @@ bilibilicli video draft \
   --profile default \
   --file ./video.mp4 \
   --cover-file ./cover.jpg \
+  --subtitle-file ./subtitle.en.srt \
+  --subtitle-lan en \
   --title "投稿标题" \
   --tid 27 \
   --tags "学习" \
@@ -130,6 +142,8 @@ The first implementation uses these web endpoints:
 - `POST https://member.bilibili.com/upload/multipart/new` for current video upload initialization.
 - `POST https://member.bilibili.com/upload/multipart/part`, signed `PUT`, and `POST https://member.bilibili.com/upload/multipart/complete` for current video bytes.
 - `POST https://member.bilibili.com/x/vu/web/cover/up` for optional cover upload.
+- `POST https://api.bilibili.com/x/upload/web/image` with `bucket=subtitle` for subtitle file upload.
+- `POST https://api.bilibili.com/x/v2/dm/subtitle/draft/preSave` for attaching subtitle drafts.
 - `POST https://member.bilibili.com/x/vupre/web/draft/add` for saving an upload as a draft.
 - Legacy `GET https://member.bilibili.com/preupload` and Upos multipart helpers are retained in code for older upload paths.
 - `POST https://member.bilibili.com/x/vu/web/add/v3` for archive submission.
