@@ -5,6 +5,7 @@ import { createClient } from "../lib/client.mjs";
 import { preuploadVideo, uploadVideoFile } from "../lib/upload.mjs";
 import { deleteDraft, saveDraft, submitArchive, updateDraftSubtitle, uploadCover } from "../lib/archive.mjs";
 import { inferSubtitleLan, saveSubtitleDraft } from "../lib/subtitle.mjs";
+import { listCopyrightParams, listTopicParams, listTypeParams, topicInfo } from "../lib/params.mjs";
 import { commandRegistry, parseArgs, printJson, usage } from "../lib/cli.mjs";
 
 async function main() {
@@ -63,6 +64,18 @@ async function main() {
     return;
   }
 
+  if (group === "params") {
+    if (action === "copyright") return printJson(listCopyrightParams(), args);
+    if (action === "types") return printJson(await listTypeParams(client, { flat: !args.tree }), args);
+    if (action === "topics") return printJson(await listTopicParams(client, {
+      tid: args.tid,
+      title: args.title || "",
+      keyword: args.keyword || "",
+      ps: Number(args.ps || 20)
+    }), args);
+    if (action === "topic-info") return printJson(await topicInfo(client, { topicId: requireFlag(args, "topic-id") }), args);
+  }
+
   if (group === "upload") {
     if (action === "preupload") {
       const file = requireFlag(args, "file");
@@ -98,7 +111,8 @@ async function main() {
       filename: requireFlag(args, "filename"),
       videoTitle: args["video-title"] || args.title,
       cover: args.cover || "",
-      subtitleLan: args["subtitle-lan"] || ""
+      subtitleLan: args["subtitle-lan"] || "",
+      ...topicFlags(args)
     }), args);
   }
 
@@ -164,7 +178,8 @@ async function main() {
       filename: uploadedData.filename,
       videoTitle: args["video-title"] || args.title,
       cover,
-      subtitleLan
+      subtitleLan,
+      ...topicFlags(args)
     });
     return printJson({ ok: uploaded.ok && (!subtitle || subtitle.ok) && submitted.ok, uploaded, subtitle, submitted }, args);
   }
@@ -226,6 +241,14 @@ function requireFlag(args, name) {
 
 function splitCsv(value) {
   return String(value).split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function topicFlags(args) {
+  return {
+    topicId: args["topic-id"] || "",
+    topicFrom: args["topic-from"] || "search",
+    missionId: args["mission-id"] || ""
+  };
 }
 
 main().catch((error) => {
