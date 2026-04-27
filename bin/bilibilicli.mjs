@@ -42,13 +42,21 @@ async function main() {
 
   if (group === "doctor") {
     const account = await client.account();
+    const accountData = account.parsed?.data || {};
     printJson({
       ok: account.ok,
       profile,
       checks: {
         authFile: client.paths.authFile,
         configFile: client.paths.configFile,
-        account
+        account: {
+          ok: account.ok,
+          status: account.status,
+          endpoint: account.endpoint,
+          isLogin: Boolean(accountData.isLogin),
+          mid: accountData.mid,
+          uname: accountData.uname
+        }
       }
     }, args);
     return;
